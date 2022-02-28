@@ -1,0 +1,29 @@
+# Minecraft Forge server with pre-defined FTB modpack
+version: '3.7'
+services:
+  minecraft:
+    image: itzg/minecraft-server:multiarch
+    ports:
+      - "25565:25565"
+      - "25575:25575"
+    environment:
+      ALLOW_NETHER: "TRUE"
+      ENABLE_RCON: "TRUE"
+      EULA: "TRUE"
+      FTB_MODPACK_ID: "80" # FTB Endeavour 1.16.5
+      MEMORY: "4G"
+      RCON_PASSWORD: "minecraft" # Set your own password
+      TYPE: "FTBA"
+    deploy:
+      resources:
+        limits:
+          memory: "5G"
+          cpus: "2"
+    volumes:
+      - "minecraft:/data"
+volumes:
+  minecraft:
+    driver: "azure_file"
+    driver_opts:
+      share_name: "mc-ftb"
+      storage_account_name: "minecraftstorage" # Set your own Storage Account name

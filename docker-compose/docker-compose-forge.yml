@@ -1,0 +1,29 @@
+# Minecraft Forge server with custom mods added to Azure Files share
+version: '3.7'
+services:
+  minecraft:
+    image: itzg/minecraft-server
+    ports:
+      - "25565:25565"
+      - "25575:25575"
+    environment:
+      ALLOW_NETHER: "TRUE"
+      ENABLE_RCON: "TRUE"
+      EULA: "TRUE"
+      MEMORY: "4G"
+      RCON_PASSWORD: "minecraft" # Set your own password
+      TYPE: "FORGE"
+      VERSION: "1.18.1"
+    deploy:
+      resources:
+        limits:
+          memory: "5G"
+          cpus: "2"
+    volumes:
+      - "minecraft:/data"
+volumes:
+  minecraft:
+    driver: "azure_file"
+    driver_opts:
+      share_name: "mc-forge"
+      storage_account_name: "minecraftstorage" # Set your own Storage Account name
