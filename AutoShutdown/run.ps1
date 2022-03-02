@@ -97,7 +97,12 @@ try {
 }
 
 if (-not $ContainerGroup.IPAddressIP) {
-    Write-Error "[ERROR] Error determining Container Group IP. State: [$($ContainerGroup.InstanceViewState)]"
+    if ($ContainerGroup.InstanceViewState -eq 'Running') {
+        Write-Error "[ERROR] Error determining Container Group IP. State: [$($ContainerGroup.InstanceViewState)]"
+    } elseif ($ContainerGroup.InstanceViewState -eq 'Stopped') {
+        Write-Output "[INFO] Container Group [$ContainerGroupName] is stopped."
+        return
+    }
 }
 
 Write-Output "[INFO] Checking the number of active players in [$ContainerGroupName]..."

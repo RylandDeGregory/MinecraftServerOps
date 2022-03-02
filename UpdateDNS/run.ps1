@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 # Grab variables from Function Application Settings
 $ACIResourceGroup   = 'MinecraftACI'
 $ContainerGroupName = $env:CONTAINER_GROUP_NAME
-$DnsZoneName        = $env:DNS_ZONE_NAMEåå
+$DnsZoneName        = $env:DNS_ZONE_NAME
 $DnsRecordName      = $env:DNS_RECORD_NAME
 #endregion Init
 
