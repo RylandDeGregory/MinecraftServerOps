@@ -11,7 +11,7 @@ env:
 
 jobs:
   test:
-    name: PSScriptAnalyzer
+    name: Run PSScriptAnalyzer tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -30,21 +30,17 @@ jobs:
           sarif_file: results.sarif
 
   deploy:
-    name: Deploy
+    name: Deploy Function App
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-      # - name: Zip app code
-      #   shell: pwsh
-      #   run: |
-      #     pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-      #     Compress-Archive -Path . -DestinationPath './release.zip'
-      #     popd
-      - name: Azure Functions Action
+      - name: "Checkout GitHub Action"
+        uses: actions/checkout@master
+
+      - name: "Run Azure Functions Action"
+        uses: Azure/functions-action@v1
         id: fa
-        uses: Azure/functions-action@v1.4.4
         with:
-          app-name: ${{ Secrets.AZURE_FUNCTION_APP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ Secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}
-          respect-funcignore: true
+          app-name: ${{ secrets.AZURE_FUNCTION_APP_NAME }}
+          package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
