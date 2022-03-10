@@ -70,6 +70,16 @@ function Test-RCDNetConnection {
 } #endFunction Test-RCDNetConnection
 #endregion Functions
 
+if ([string]::IsNullOrWhiteSpace($ServerName)) {
+    Write-Error '[ERROR] Missing Required parameter ServerName. Please provide a value that is not null, empty, or whitespace'
+    return
+} elseif ([string]::IsNullOrWhiteSpace($Requestor)) {
+    Write-Error '[ERROR] Missing Required parameter Requestor. Please provide a value that is not null, empty, or whitespace'
+    return
+} else {
+    Write-Output "[INFO] Waiting for [$ContainerGroupName] with IP address [$ServerName] to become available based on request from [$Requestor]"
+}
+
 #region WaitForServer
 try {
     $RConPassword = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name "$ContainerGroupName-RconPassword" -AsPlainText
@@ -77,7 +87,6 @@ try {
     Write-Error "[ERROR] Error getting Azure Key Vault Secret [$ContainerGroupName-RconPassword] from Azure Key Vault [$KeyVaultName]: $_"
 }
 
-Write-Output "[INFO] Waiting for [$ContainerGroupName] to become available based on request from [$Requestor]"
 $Count = 0
 do {
     $Status = Test-RCDNetConnection -ComputerName $ServerName -Port 25575 -Timeout 5000 # Time out after waiting 5 seconds
@@ -126,7 +135,7 @@ try {
 $SMS = @{
     From = $TwilioPhone
     To   = $Requestor
-    Body = "Minecraft server '$DnsRecordName.$DnsZoneName' started successfully."
+    Body = "Minecraft server '$DnsRecordName.$DnsZoneName' ($ServerName) started successfully."
 }
 
 try {
@@ -141,5 +150,6 @@ try {
 # Send HTTP response
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
     StatusCode = [HttpStatusCode]::OK
+    Body = "[INFO] Successfully started Azure Container Group [$ContainerGroupName]. Access at '$DnsRecordName.$DnsZoneName' ($ServerName)"
 })
 #endregion Output

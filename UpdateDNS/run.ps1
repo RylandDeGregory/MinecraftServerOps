@@ -24,9 +24,18 @@ if (-not $DnsZone) {
 
 try {
     Write-Output "[INFO] Getting updated public IP address for Azure Container Group [$ContainerGroupName]"
-    $ContainerGroupIP = Get-AzContainerGroup -Name $ContainerGroupName -ResourceGroupName $ACIResourceGroup | Select-Object -ExpandProperty IPAddressIP
+    $ContainerGroup = Get-AzContainerGroup -Name $ContainerGroupName -ResourceGroupName $ACIResourceGroup
+    $ContainerGroupIP = $ContainerGroup.IPAddressIP
 } catch {
     Write-Error "[ERROR] Error getting Azure Container Group with name [$ContainerGroupName]: $_"
+}
+
+if (-not $ContainerGroupIP) {
+    if ($ContainerGroup.InstanceViewState -eq 'Running') {
+        Write-Error "[ERROR] Error getting IP address of Azure Container Group [$ContainerGroupName]"
+    } else {
+        Write-Output "[INFO] Azure Container Group [$ContainerGroupName] is [$($ContainerGroup.InstanceViewState)]"
+    }
 }
 
 try {

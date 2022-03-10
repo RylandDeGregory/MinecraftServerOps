@@ -88,6 +88,12 @@ if ($Message -eq 'Start') {
         return
     }
 
+    # Get updated Container Group properties
+    $ContainerGroup = Get-AzContainerGroup -ResourceGroupName $ACIResourceGroup -Name $ContainerGroupName
+    if ([string]::IsNullOrWhiteSpace($ContainerGroup.IPAddressIP)) {
+        Write-Error "[ERROR] Error getting IP address of Azure Container Group [$ContainerGroupName]"
+    }
+
     try {
         # Invoke WaitForServer function
         $FunctionKey = Get-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName $FunctionKeySecretName -AsPlainText

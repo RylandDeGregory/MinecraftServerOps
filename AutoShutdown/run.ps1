@@ -98,7 +98,7 @@ try {
 
 if (-not $ContainerGroup.IPAddressIP) {
     if ($ContainerGroup.InstanceViewState -eq 'Running') {
-        Write-Error "[ERROR] Error determining Container Group IP. State: [$($ContainerGroup.InstanceViewState)]"
+        Write-Error '[ERROR] Error determining Container Group IP'
     } elseif ($ContainerGroup.InstanceViewState -eq 'Stopped') {
         Write-Output "[INFO] Container Group [$ContainerGroupName] is stopped."
         return
@@ -108,7 +108,17 @@ if (-not $ContainerGroup.IPAddressIP) {
 Write-Output "[INFO] Checking the number of active players in [$ContainerGroupName]..."
 # If the server is online, query the list of active users with mcrcon.
 if (Test-RCDNetConnection -ComputerName $ContainerGroup.IPAddressIP -Port 25575) {
-    $NumPlayers = Invoke-Expression ".\mcrcon.exe -H $($ContainerGroup.IPAddressIP) -P 25575 -p $RconPassword 'list'"
+    $Count = 0
+    do {
+        try {
+            $NumPlayers = Invoke-Expression ".\mcrcon.exe -H $($ContainerGroup.IPAddressIP) -P 25575 -p $RconPassword 'list'" -ErrorAction SilentlyContinue
+        } catch {
+            ;
+        }
+        Start-Sleep -Seconds 10
+        $Count++
+    } until (-not [string]::IsNullOrWhiteSpace($NumPlayers) -or $Count -eq 24)
+    
     if ($NumPlayers -eq $EmptyMessage) {
         # If there are no players on the server, add a record to an Azure Storage Table that tracks the number of increments while empty
         Write-Output "[INFO] There are 0 active players in [$ContainerGroupName]. Checking number of iterations while empty."
