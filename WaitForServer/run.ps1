@@ -6,6 +6,7 @@ param($Request, $TriggerMetadata)
 $ErrorActionPreference = 'Stop'
 
 # Grab variables from Function Application Settings
+$ACIResourceGroup   = 'MinecraftACI'
 $ContainerGroupName = $env:CONTAINER_GROUP_NAME
 $KeyVaultName       = $env:KEY_VAULT_NAME
 $DnsZoneName        = $env:DNS_ZONE_NAME
@@ -110,7 +111,7 @@ do {
     $Count++
     Start-Sleep -Seconds 8 # Command takes ~2 seconds to fail, add 8 seconds to create ~10 second iterations
     Write-Output "[INFO] $($Count * 10) seconds elapsed..."
-} until (($Status -ne 'Authentication failed!') -or ($Count -eq 24))
+} until (($Status -like 'There are *') -or ($Count -eq 24))
 
 # Time out after waiting 4 minutes
 if ($Count -eq 24) {
@@ -118,6 +119,33 @@ if ($Count -eq 24) {
     return
 }
 #endregion WaitForServer
+
+#region UpdateDNS
+try {
+    Write-Output "[INFO] Getting Azure DNS Zone [$DnsZoneName]"
+    $DnsZone = Get-AzDnsZone | Where-Object { $_.Name -eq $DnsZoneName }
+} catch {
+    Write-Error "[ERROR] Error getting Azure DNS Zone with name [$DnsZoneName]: $_"
+}
+if (-not $DnsZone) {
+    Write-Error "[ERROR] No DNS Zone found with name [$DnsZoneName]"
+}
+
+try {
+    Write-Output "[INFO] Getting Azure Public DNS Record Set [$DnsRecordName] in Zone [$($DnsZone.Name)]"
+    $RecordSet = Get-AzDnsRecordSet -ResourceGroupName $DnsZone.ResourceGroupName -ZoneName $DnsZone.Name -Name $DnsRecordName -RecordType A
+} catch {
+    Write-Error "[ERROR] Error getting Azure DNS Record Set with name [$DnsRecordName] in Zone [$($DnsZone.Name)]: $_"
+}
+
+try {
+    $RecordSet.Records[0].Ipv4Address = $ServerName
+    Set-AzDnsRecordSet -RecordSet $RecordSet -Overwrite
+    Write-Output "[INFO] Updated Azure DNS Record Set [$DnsRecordName] IP address to [$ServerName]: $_"
+} catch {
+    Write-Error "[ERROR] Error updating Azure DNS Record Set [$DnsRecordName] IP address to [$ServerName]: $_"
+}
+#endregion UpdateDNS
 
 #region Output
 try {
