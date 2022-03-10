@@ -7,14 +7,6 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Create relase artifact
-    runs-on: ubuntu-latest
-    steps:
-      - name: Zip app code
-        shell: pwsh
-        run: Compress-Archive -Path . -DestinationPath './release.zip'
-
   test:
     name: PSScriptAnalyzer
     needs: build
@@ -40,10 +32,13 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - name: Zip app code
+        shell: pwsh
+        run: Compress-Archive -Path . -DestinationPath 'release.zip'
       - name: Azure Functions Action
         uses: Azure/functions-action@v1.4.4
         with:
           app-name: ${{ Secrets.AZURE_FUNCTION_APP_NAME }}
-          package: ./release.zip
+          package: release.zip
           publish-profile: ${{ Secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}
           respect-funcignore: true
