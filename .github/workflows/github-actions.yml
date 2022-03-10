@@ -34,17 +34,17 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Zip app code
-        shell: pwsh
-        run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          Compress-Archive -Path . -DestinationPath './release.zip'
-          popd
+      # - name: Zip app code
+      #   shell: pwsh
+      #   run: |
+      #     pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+      #     Compress-Archive -Path . -DestinationPath './release.zip'
+      #     popd
       - name: Azure Functions Action
         id: fa
         uses: Azure/functions-action@v1.4.4
         with:
           app-name: ${{ Secrets.AZURE_FUNCTION_APP_NAME }}
-          package: "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/release.zip"
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           publish-profile: ${{ Secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}
           respect-funcignore: true
