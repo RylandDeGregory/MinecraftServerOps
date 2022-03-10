@@ -11,6 +11,7 @@ $ContainerGroupName = $env:CONTAINER_GROUP_NAME
 $KeyVaultName       = $env:KEY_VAULT_NAME
 $DnsZoneName        = $env:DNS_ZONE_NAME
 $DnsRecordName      = $env:DNS_RECORD_NAME
+$StorageAccountName = $env:STORAGE_ACCOUNT_NAME
 
 # Get required inputs from request body
 $Body       = $Request.Body.Split('&') | ConvertFrom-StringData
@@ -146,6 +147,24 @@ try {
     Write-Error "[ERROR] Error updating Azure DNS Record Set [$DnsRecordName] IP address to [$ServerName]: $_"
 }
 #endregion UpdateDNS
+
+#region ResetAutoShutdown
+try {
+    # Connect to Azure Storage Table
+    $AccountKey = Get-AzStorageAccountKey -ResourceGroupName $ACIResourceGroup -Name $StorageAccountName | Select-Object -First 1 -ExpandProperty Value
+    $Context    = New-AzStorageContext -StorageAccountName $StorageAccountName -StorageAccountKey $AccountKey
+    $Table      = Get-AzStorageTable -Context $Context -Name 'ActiveUsers' | Select-Object -ExpandProperty CloudTable
+} catch {
+    Write-Error "[ERROR] Error connecting to Storage Account: $_"
+}
+
+try {
+    # Remove all records from the Azure Storage Table to reset the iteration counter
+    Get-AzTableRow -Table $Table | Remove-AzTableRow -Table $Table | Out-Null
+} catch {
+    Write-Error "[ERROR] Error removing Azure Table entities: $_"
+}
+#endregion ResetAutoShutdown
 
 #region Output
 try {
