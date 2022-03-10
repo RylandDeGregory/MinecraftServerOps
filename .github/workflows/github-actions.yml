@@ -44,3 +44,4 @@ jobs:
           app-name: ${{ secrets.AZURE_FUNCTION_APP_NAME }}
           package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}
           publish-profile: ${{ secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}
+          respect-funcignore: true
