@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 # Grab variables from Function Application Settings
 $ACIResourceGroup      = 'MinecraftACI'
 $ContainerGroupName    = $env:CONTAINER_GROUP_NAME
-$DnsZoneName           = $env:DNS_ZONE_NAMEå
+$DnsZoneName           = $env:DNS_ZONE_NAME
 $DnsRecordName         = $env:DNS_RECORD_NAME
 $FunctionKeySecretName = $env:WAIT_FUNCTION_KEY
 $KeyVaultName          = $env:KEY_VAULT_NAME
