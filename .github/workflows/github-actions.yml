@@ -8,7 +8,16 @@ on:
 
 jobs:
   build:
+    name: Create relase artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zip app code
+        shell: pwsh
+        run: Compress-Archive -Path . -DestinationPath './release.zip'
+
+  test:
     name: PSScriptAnalyzer
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,7 +27,7 @@ jobs:
         with:
           path: .\
           recurse: true
-          settings: ".PSScriptAnalyzerSettings.psd1"
+          settings: .PSScriptAnalyzerSettings.psd1
           output: results.sarif
 
       - name: Upload SARIF results file
@@ -28,11 +37,13 @@ jobs:
 
   deploy:
     name: Deploy
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Azure Functions Action
         uses: Azure/functions-action@v1.4.4
         with:
           app-name: ${{ Secrets.AZURE_FUNCTION_APP_NAME }}
+          package: ./release.zip
           publish-profile: ${{ Secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}
           respect-funcignore: true
