@@ -80,18 +80,12 @@ if ($Message -eq 'Start') {
         $Count++
         Start-Sleep -Seconds 10
         Write-Output "[INFO] $($Count * 10) seconds elapsed..."
-    } until (($ContainerGroup.InstanceViewState -eq 'Running') -or ($Count -eq 24))
+    } until (($ContainerGroup.InstanceViewState -eq 'Running' -and (-not [string]::IsNullOrWhiteSpace($ContainerGroup.IPAddressIP))) -or ($Count -eq 24))
 
     # Time out after waiting 4 minutes
     if ($Count -eq 24) {
         Write-Error "[ERROR] Timed out waiting for Azure Container Group [$ContainerGroupName] to start"
         return
-    }
-
-    # Get updated Container Group properties
-    $ContainerGroup = Get-AzContainerGroup -ResourceGroupName $ACIResourceGroup -Name $ContainerGroupName
-    if ([string]::IsNullOrWhiteSpace($ContainerGroup.IPAddressIP)) {
-        Write-Error "[ERROR] Error getting IP address of Azure Container Group [$ContainerGroupName]"
     }
 
     try {
