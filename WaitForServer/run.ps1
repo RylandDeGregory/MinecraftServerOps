@@ -196,7 +196,7 @@ try {
 
 # Send HTTP response
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-    StatusCode = [HttpStatusCode]::OK
-    Body = "[INFO] Successfully started Azure Container Group [$ContainerGroupName]. Access at '$DnsRecordName.$DnsZoneName' ($ServerName)"
-})
+        StatusCode = [HttpStatusCode]::OK
+        Body       = "[INFO] Successfully started Azure Container Group [$ContainerGroupName]. Access at '$DnsRecordName.$DnsZoneName' ($ServerName)"
+    })
 #endregion Output

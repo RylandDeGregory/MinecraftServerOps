@@ -48,8 +48,8 @@ Push-OutputBinding -Name outputTable -Value @{
 
 # Send HTTP response
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-    StatusCode = [HttpStatusCode]::OK
-    ContentType = 'text/html'
-    Body = $Response
-})
+        StatusCode  = [HttpStatusCode]::OK
+        ContentType = 'text/html'
+        Body        = $Response
+    })
 #endregion Output

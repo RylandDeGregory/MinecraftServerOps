@@ -118,7 +118,7 @@ if (Test-RCDNetConnection -ComputerName $ContainerGroup.IPAddressIP -Port 25575)
         Start-Sleep -Seconds 10
         $Count++
     } until (-not [string]::IsNullOrWhiteSpace($NumPlayers) -or $Count -eq 24)
-    
+
     if ($NumPlayers -eq $EmptyMessage) {
         # If there are no players on the server, add a record to an Azure Storage Table that tracks the number of increments while empty
         Write-Output "[INFO] There are 0 active players in [$ContainerGroupName]. Checking number of iterations while empty."
