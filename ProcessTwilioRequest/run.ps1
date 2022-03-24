@@ -38,6 +38,14 @@ $QueueItem = @{
 } | ConvertTo-Json
 Push-OutputBinding -Name outputQueueItem -Value $QueueItem
 
+# Log request to Azure Storage Table
+Push-OutputBinding -Name outputTable -Value @{
+    PartitionKey = 'default'
+    RowKey       = (New-Guid).Guid
+    Requestor    = $From
+    Message      = $Message
+}
+
 # Send HTTP response
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
     StatusCode = [HttpStatusCode]::OK
