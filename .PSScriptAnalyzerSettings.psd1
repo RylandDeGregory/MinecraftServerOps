@@ -45,7 +45,7 @@
         'PSAvoidUsingPositionalParameters',
         'PSReservedCmdletChar',
         'PSReservedParams',
-        'PSReviewUnusedParameter',
+        # 'PSReviewUnusedParameter',
         'PSUseCmdletCorrectly',
         'PSUseDeclaredVarsMoreThanAssignments',
         'PSUseSingularNouns',
