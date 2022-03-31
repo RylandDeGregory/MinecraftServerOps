@@ -4,6 +4,7 @@ using namespace System.Web
 param($Request, $TriggerMetadata)
 
 $ErrorActionPreference = 'Stop'
+$Valid = $true
 
 # Grab variables from Function Application Settings
 $DnsZoneName   = $env:DNS_ZONE_NAME
@@ -22,7 +23,7 @@ $Message = $Message.Trim()
 # Check if the message contains a valid command and respond to the sender
 if ($Message -notin 'Start', 'Shutdown') {
     $Response = "<Response><Message>Invalid Request. Valid commands are 'Start' and 'Shutdown'.</Message></Response>"
-    Write-Error "[ERROR] Received invalid message [$Message]"
+    $Valid = $false
 } elseif ($Message -eq 'Start') {
     $Response = "<Response><Message>Minecraft server '$DnsRecordName.$DnsZoneName' is now starting. You will receive another message when it's ready.</Message></Response>"
 } elseif ($Message -eq 'Shutdown') {
@@ -31,12 +32,14 @@ if ($Message -notin 'Start', 'Shutdown') {
 #endregion Process
 
 #region Output
-# Add request to Azure Storage Queue
-$QueueItem = @{
-    Requestor = $From
-    Message   = $Message
-} | ConvertTo-Json
-Push-OutputBinding -Name outputQueueItem -Value $QueueItem
+if ($Valid) {
+    # Add request to Azure Storage Queue
+    $QueueItem = @{
+        Requestor = $From
+        Message   = $Message
+    } | ConvertTo-Json
+    Push-OutputBinding -Name outputQueueItem -Value $QueueItem
+}
 
 # Send HTTP response
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
