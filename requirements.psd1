@@ -3,6 +3,6 @@
 #
 @{
     # For latest supported version, go to 'https://www.powershellgallery.com/packages/Az'.
-    'Az' = '7.*'
+    'Az'      = '7.*'
     'AzTable' = '2.1.0'
 }

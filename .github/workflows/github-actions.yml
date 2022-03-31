@@ -1,0 +1,47 @@
+name: Test and Deploy PowerShell Azure Function App
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AZURE_FUNCTION_APP_PACKAGE_PATH: "."
+
+jobs:
+  test:
+    name: Run PSScriptAnalyzer tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run PSScriptAnalyzer
+        uses: microsoft/psscriptanalyzer-action@2044ae068e37d0161fa2127de04c19633882f061
+        with:
+          path: .\
+          recurse: true
+          settings: .PSScriptAnalyzerSettings.psd1
+          output: results.sarif
+
+      - name: Upload SARIF results file
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: results.sarif
+
+  deploy:
+    name: Deploy Function App
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - name: "Checkout GitHub Action"
+        uses: actions/checkout@master
+
+      - name: "Run Azure Functions Action"
+        uses: Azure/functions-action@v1
+        id: fa
+        with:
+          app-name: ${{ secrets.AZURE_FUNCTION_APP_NAME }}
+          package: ${{ env.AZURE_FUNCTION_APP_PACKAGE_PATH }}
+          publish-profile: ${{ secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}
+          respect-funcignore: true

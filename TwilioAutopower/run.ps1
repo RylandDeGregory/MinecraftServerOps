@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 # Grab variables from Function Application Settings
 $ACIResourceGroup      = 'MinecraftACI'
 $ContainerGroupName    = $env:CONTAINER_GROUP_NAME
-$DnsZoneName           = $env:DNS_ZONE_NAMEå
+$DnsZoneName           = $env:DNS_ZONE_NAME
 $DnsRecordName         = $env:DNS_RECORD_NAME
 $FunctionKeySecretName = $env:WAIT_FUNCTION_KEY
 $KeyVaultName          = $env:KEY_VAULT_NAME
@@ -80,7 +80,7 @@ if ($Message -eq 'Start') {
         $Count++
         Start-Sleep -Seconds 10
         Write-Output "[INFO] $($Count * 10) seconds elapsed..."
-    } until (($ContainerGroup.InstanceViewState -eq 'Running') -or ($Count -eq 24))
+    } until (($ContainerGroup.InstanceViewState -eq 'Running' -and (-not [string]::IsNullOrWhiteSpace($ContainerGroup.IPAddressIP))) -or ($Count -eq 24))
 
     # Time out after waiting 4 minutes
     if ($Count -eq 24) {

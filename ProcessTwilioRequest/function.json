@@ -20,6 +20,13 @@
       "name": "outputQueueItem",
       "queueName": "twilio-requests",
       "connection": "AzureWebJobsStorage"
+    },
+    {
+      "type": "table",
+      "direction": "out",
+      "name": "outputTable",
+      "tableName": "TwilioEvents",
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }

@@ -6,10 +6,12 @@ param($Request, $TriggerMetadata)
 $ErrorActionPreference = 'Stop'
 
 # Grab variables from Function Application Settings
+$ACIResourceGroup   = 'MinecraftACI'
 $ContainerGroupName = $env:CONTAINER_GROUP_NAME
 $KeyVaultName       = $env:KEY_VAULT_NAME
 $DnsZoneName        = $env:DNS_ZONE_NAME
 $DnsRecordName      = $env:DNS_RECORD_NAME
+$StorageAccountName = $env:STORAGE_ACCOUNT_NAME
 
 # Get required inputs from request body
 $Body       = $Request.Body.Split('&') | ConvertFrom-StringData
@@ -70,6 +72,16 @@ function Test-RCDNetConnection {
 } #endFunction Test-RCDNetConnection
 #endregion Functions
 
+if ([string]::IsNullOrWhiteSpace($ServerName)) {
+    Write-Error '[ERROR] Missing Required parameter ServerName. Please provide a value that is not null, empty, or whitespace'
+    return
+} elseif ([string]::IsNullOrWhiteSpace($Requestor)) {
+    Write-Error '[ERROR] Missing Required parameter Requestor. Please provide a value that is not null, empty, or whitespace'
+    return
+} else {
+    Write-Output "[INFO] Waiting for [$ContainerGroupName] with IP address [$ServerName] to become available based on request from [$Requestor]"
+}
+
 #region WaitForServer
 try {
     $RConPassword = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name "$ContainerGroupName-RconPassword" -AsPlainText
@@ -77,7 +89,6 @@ try {
     Write-Error "[ERROR] Error getting Azure Key Vault Secret [$ContainerGroupName-RconPassword] from Azure Key Vault [$KeyVaultName]: $_"
 }
 
-Write-Output "[INFO] Waiting for [$ContainerGroupName] to become available based on request from [$Requestor]"
 $Count = 0
 do {
     $Status = Test-RCDNetConnection -ComputerName $ServerName -Port 25575 -Timeout 5000 # Time out after waiting 5 seconds
@@ -101,7 +112,7 @@ do {
     $Count++
     Start-Sleep -Seconds 8 # Command takes ~2 seconds to fail, add 8 seconds to create ~10 second iterations
     Write-Output "[INFO] $($Count * 10) seconds elapsed..."
-} until (($Status -ne 'Authentication failed!') -or ($Count -eq 24))
+} until (($Status -like 'There are *') -or ($Count -eq 24))
 
 # Time out after waiting 4 minutes
 if ($Count -eq 24) {
@@ -109,6 +120,51 @@ if ($Count -eq 24) {
     return
 }
 #endregion WaitForServer
+
+#region UpdateDNS
+try {
+    Write-Output "[INFO] Getting Azure DNS Zone [$DnsZoneName]"
+    $DnsZone = Get-AzDnsZone | Where-Object { $_.Name -eq $DnsZoneName }
+} catch {
+    Write-Error "[ERROR] Error getting Azure DNS Zone with name [$DnsZoneName]: $_"
+}
+if (-not $DnsZone) {
+    Write-Error "[ERROR] No DNS Zone found with name [$DnsZoneName]"
+}
+
+try {
+    Write-Output "[INFO] Getting Azure Public DNS Record Set [$DnsRecordName] in Zone [$($DnsZone.Name)]"
+    $RecordSet = Get-AzDnsRecordSet -ResourceGroupName $DnsZone.ResourceGroupName -ZoneName $DnsZone.Name -Name $DnsRecordName -RecordType A
+} catch {
+    Write-Error "[ERROR] Error getting Azure DNS Record Set with name [$DnsRecordName] in Zone [$($DnsZone.Name)]: $_"
+}
+
+try {
+    $RecordSet.Records[0].Ipv4Address = $ServerName
+    Set-AzDnsRecordSet -RecordSet $RecordSet -Overwrite
+    Write-Output "[INFO] Updated Azure DNS Record Set [$DnsRecordName] IP address to [$ServerName]: $_"
+} catch {
+    Write-Error "[ERROR] Error updating Azure DNS Record Set [$DnsRecordName] IP address to [$ServerName]: $_"
+}
+#endregion UpdateDNS
+
+#region ResetAutoShutdown
+try {
+    # Connect to Azure Storage Table
+    $AccountKey = Get-AzStorageAccountKey -ResourceGroupName $ACIResourceGroup -Name $StorageAccountName | Select-Object -First 1 -ExpandProperty Value
+    $Context    = New-AzStorageContext -StorageAccountName $StorageAccountName -StorageAccountKey $AccountKey
+    $Table      = Get-AzStorageTable -Context $Context -Name 'ActiveUsers' | Select-Object -ExpandProperty CloudTable
+} catch {
+    Write-Error "[ERROR] Error connecting to Storage Account: $_"
+}
+
+try {
+    # Remove all records from the Azure Storage Table to reset the iteration counter
+    Get-AzTableRow -Table $Table | Remove-AzTableRow -Table $Table | Out-Null
+} catch {
+    Write-Error "[ERROR] Error removing Azure Table entities: $_"
+}
+#endregion ResetAutoShutdown
 
 #region Output
 try {
@@ -126,7 +182,7 @@ try {
 $SMS = @{
     From = $TwilioPhone
     To   = $Requestor
-    Body = "Minecraft server '$DnsRecordName.$DnsZoneName' started successfully."
+    Body = "Minecraft server '$DnsRecordName.$DnsZoneName' ($ServerName) started successfully."
 }
 
 try {
@@ -140,6 +196,7 @@ try {
 
 # Send HTTP response
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
-    StatusCode = [HttpStatusCode]::OK
-})
+        StatusCode = [HttpStatusCode]::OK
+        Body       = "[INFO] Successfully started Azure Container Group [$ContainerGroupName]. Access at '$DnsRecordName.$DnsZoneName' ($ServerName)"
+    })
 #endregion Output
