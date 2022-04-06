@@ -57,5 +57,5 @@ try {
 Push-OutputBinding -Name outputTable -Value @{
     PartitionKey = 'default'
     RowKey       = (New-Guid).Guid
-    Requestor    = $eventGridEvent.Data.Claims.Name
+    Requestor    = $TriggerMetadata.Data.Claims.Name
 }
