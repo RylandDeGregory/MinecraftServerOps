@@ -1,9 +1,6 @@
 param($eventGridEvent, $TriggerMetadata)
 
-# Make sure to pass hashtables to Out-String so they're logged correctly
-$eventGridEvent | ConvertTo-Json -Depth 10 | Write-Host
-
-$TriggerMetadata | ConvertTo-Json -Depth 10 | Write-Host
+$TriggerMetadata.Data.Claims.Name
 
 # ($eventGridEvent).Data | Out-String | Write-Host
 
