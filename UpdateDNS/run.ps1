@@ -1,6 +1,6 @@
 param($eventGridEvent, $TriggerMetadata)
 
-$TriggerMetadata.Data.Claims.Name
+$TriggerMetadata.Data.Claims.Name | Write-Host
 
 # ($eventGridEvent).Data | Out-String | Write-Host
 
